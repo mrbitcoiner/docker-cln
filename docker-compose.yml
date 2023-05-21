@@ -1,0 +1,15 @@
+services:
+  cln:
+    container_name: cln 
+    build: ./containers/cln
+    volumes:
+      - ./containers/cln/volume:/app
+        #    ports:
+        #      - INT:EXT
+    networks:
+      - cln
+
+networks:
+  cln:
+    name: cln
+    external: true
