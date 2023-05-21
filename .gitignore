@@ -1,3 +1,3 @@
-!containers/**/volume/config/samples
-containers/**/volume/config/
+containers/**/volume/data
 .env.old
+.env

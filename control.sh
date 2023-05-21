@@ -89,6 +89,14 @@ start_containers(){
     --remove-orphans \
     &
 }
+copy_bitcoin_cli(){
+  local $(get_env "BITCOIN_CLI_PATH")
+  local destination=./containers/cln/volume/data/bitcoin
+  if ! [ -e ${destination}/bitcoin-cli ]; then
+    mkdir -p ${destination}
+    cp ${BITCOIN_CLI_PATH} ${destination}/
+  fi
+ }
 boot(){
   copy_env
   create_network
@@ -96,15 +104,18 @@ boot(){
   set_script_permissions
   set_user_env
   set_args "${1}" "${2}"
+  copy_bitcoin_cli
   build_images
   start_containers
 }
-shutdown(){
-  local err='false'
+gracefully_shutdown(){
   for i in "${CONTAINERS[@]}"; do
-    printf 'Implement gracefully shutdown'
+    printf 'Implement gracefully shutdown\n'
+    return 1
   done
-  if ! echo $err | grep 'false' > /dev/null; then
+}
+shutdown(){
+  if ! gracefully_shutdown; then
     print_err 'Forcing shutdown'
     docker-compose down
   else
