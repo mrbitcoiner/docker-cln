@@ -3,7 +3,7 @@
 set -e
 ####################
 readonly CONTAINERS=('cln')
-readonly NETWORK='cln'
+readonly NETWORK='bitcoin'
 ####################
 print_err(){
   if [ -z "${1}" ]; then printf 'Expected: [msg]\n' 1>&2; return 1; fi

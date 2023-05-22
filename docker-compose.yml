@@ -11,5 +11,5 @@ services:
 
 networks:
   cln:
-    name: cln
+    name: bitcoin 
     external: true
