@@ -2,7 +2,7 @@
 ####################
 set -e
 ####################
-readonly CONTAINERS=("cln")
+readonly CONTAINERS=('cln')
 readonly NETWORK='cln'
 ####################
 print_err(){
@@ -76,7 +76,13 @@ build_images(){
     --build-arg $(get_env 'CONTAINER_USER') \
     --build-arg $(get_env 'CONTAINER_UID') \
     --build-arg $(get_env 'CONTAINER_GID') \
+    --build-arg $(get_env 'BITCOIN_RPC_HOSTNAME') \
+    --build-arg $(get_env 'BITCOIN_RPC_PORT') \
+    --build-arg $(get_env 'BITCOIN_RPC_USERNAME') \
+    --build-arg $(get_env 'BITCOIN_RPC_PASSWORD') \
     --build-arg $(get_env 'CLN_NETWORK') \
+    --build-arg $(get_env 'CLN_ALIAS') \
+    --build-arg $(get_env 'CLN_TRUSTEDCOIN_PLUGIN') \
     --build-arg $(get_env 'TOR_PROXY')
 }
 create_network(){
@@ -90,6 +96,9 @@ start_containers(){
     &
 }
 copy_bitcoin_cli(){
+  if ! get_env "BITCOIN_CLI_PATH"; then
+    return 0
+  fi
   local $(get_env "BITCOIN_CLI_PATH")
   local destination=./containers/cln/volume/data/bitcoin
   if ! [ -e ${destination}/bitcoin-cli ]; then
@@ -116,8 +125,8 @@ gracefully_shutdown(){
 }
 shutdown(){
   if ! gracefully_shutdown; then
-    print_err 'Forcing shutdown'
     docker-compose down
+    print_err 'Force shutdown'
   else
     for i in "${CONTAINERS[@]}"; do
       docker rm "${i}"
