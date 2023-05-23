@@ -2,9 +2,11 @@
 ####################
 set -e
 ####################
-readonly BITCOIN_CONFIG_DIR="${HOME}/.bitcoin"
+readonly BITCOIN_CONFIG_DIR="/app/data/.bitcoin"
+readonly BITCOIN_HOME_DIR="${HOME}/.bitcoin"
 ####################
 mkdir -p ${BITCOIN_CONFIG_DIR}
+ln -sf ${BITCOIN_CONFIG_DIR} ${BITCOIN_HOME_DIR}
 
 cat << EOF > ${BITCOIN_CONFIG_DIR}/bitcoin.conf
 rpcuser=${BITCOIN_RPC_USERNAME}

@@ -11,7 +11,7 @@ check_input(){
 }
 key_exists(){
   if ! [ -e ${FILE_PATH} ]; then printf "File ${FILE_PATH} does not exist\n" 1>&2; return 1; fi
-  grep '^.*'${KEY}'=.*$' ${FILE_PATH} > /dev/null
+  grep '^'${KEY}'=.*$' ${FILE_PATH} > /dev/null
 }
 append_key_value(){
   cat << EOF >> ${FILE_PATH}
@@ -19,7 +19,7 @@ ${KEY}=${VALUE}
 EOF
 }
 replace_value(){
-  sed -i'.old' -e 's/^.*'${KEY}'=.*$/'${KEY}'='${VALUE}'/' ${FILE_PATH}
+  sed -i'.old' -e 's/^'${KEY}'=.*$/'${KEY}'='${VALUE}'/' ${FILE_PATH}
 }
 set(){
   if ! key_exists; then

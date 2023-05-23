@@ -22,7 +22,10 @@ copy_base_cfg(){
 set_cln_alias(){
   /app/scripts/set_dotenv.sh "${CLN_DATA}/config" "alias" "${CLN_ALIAS}" 
 }
-set_tor_address(){
+set_tor_config(){
+  if ! echo ${TOR_PROXY} | grep '^enabled$' > /dev/null; then
+    return 0
+  fi
   local tor_hostname_path="${BASE_TOR_DIR}/${CLN_NETWORK}/hostname"
   if ! [ -e ${tor_hostname_path} ]; then
     printf "Not found hostname at: ${tor_hostname_path}\n" 1>&2
@@ -30,14 +33,25 @@ set_tor_address(){
   fi
   local tor_hostname=$(cat ${tor_hostname_path})
   /app/scripts/set_dotenv.sh "${CLN_DATA}/config" "announce-addr" "${tor_hostname}:${LN_TOR_PORT}" 
+  /app/scripts/set_dotenv.sh "${CLN_DATA}/config" "proxy" "127.0.0.1:9050" 
+  /app/scripts/set_dotenv.sh "${CLN_DATA}/config" "always-use-proxy" "true" 
+}
+trustedcoin_enabled(){
+  echo ${CLN_TRUSTEDCOIN_PLUGIN} | grep '^enabled$' > /dev/null
+}
+set_trustedcoin_plugin(){
+  if trustedcoin_enabled; then /app/scripts/trustedcoin_setup.sh ${CLN_DATA}
+  elif [ -e "${CLN_DATA}/plugins/trustedcoin" ]; then
+    rm -r ${CLN_DATA}/plugins/trustedcoin
+  fi
 }
 setup(){
-  mkdir -p ${CLN_DATA}
+  mkdir -p ${CLN_DATA}/plugins
   set_lightning_cli_cfg
   copy_base_cfg
   set_cln_alias
-  set_tor_address
-#  config_cln_trustedcoin_plugin
+  set_tor_config
+  set_trustedcoin_plugin
 }
 ####################
 setup

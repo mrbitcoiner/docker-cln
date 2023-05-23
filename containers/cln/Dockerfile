@@ -6,7 +6,7 @@ RUN apt upgrade -y
 RUN apt install -y \
   autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev \
   python3 python3-pip net-tools zlib1g-dev libsodium-dev gettext \
-  libevent-dev tor
+  libevent-dev tor wget
 
 ARG CONTAINER_USER
 ARG CONTAINER_UID

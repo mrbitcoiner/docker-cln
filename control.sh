@@ -2,7 +2,8 @@
 ####################
 set -e
 ####################
-readonly CONTAINERS=('cln')
+readonly CLN_CONTAINER='cln'
+readonly CONTAINERS=("${CLN_CONTAINER}")
 readonly NETWORK='bitcoin'
 ####################
 print_err(){
@@ -55,23 +56,6 @@ get_env(){
     printf "${key_value}"
   fi 
 }
-set_args(){
-  if [ -z ${1} ] || [ -z ${2} ]; then print_err 'Expected: [ network | tor_proxy ]'; fi 
-  local network="${1}"
-  local tor_proxy="${2}"
-  case "${network}" in
-    mainnet) env_set 'CLN_NETWORK' "${network}" ;;
-    testnet) env_set 'CLN_NETWORK' "${network}" ;;
-    regtest) env_set 'CLN_NETWORK' "${network}" ;;
-    *) print_err 'Expected network: [ mainnet | testnet | regtest ]' ;;
-  esac
-  case "${tor_proxy}" in
-    enabled) env_set 'TOR_PROXY' "${tor_proxy}" ;;
-    disabled) env_set 'TOR_PROXY' "${tor_proxy}" ;;
-    *) print_err 'Expected tor_proxy: [ enabled | disabled ]' ;;
-  esac
-  
-}
 build_images(){
   docker-compose build \
     --build-arg $(get_env 'CONTAINER_USER') \
@@ -113,7 +97,6 @@ boot(){
   setup_directories
   set_script_permissions
   set_user_env
-  set_args "${1}" "${2}"
   copy_bitcoin_cli
   build_images
   start_containers
@@ -150,16 +133,27 @@ shutdown(){
   docker-compose down
 }
 clean(){
+  printf 'Are you sure? (N/y): '
+  read local input
+  if ! echo ${input} | grep '^y$'; then
+    printf 'Abort!\n' 1>&2; return 1
+  fi
   for i in "${CONTAINERS[@]}"; do
     rm -rfv ./containers/${i}/volume/data
   done
 }
+cli_wrapper(){
+  if [ -z "${1}" ]; then printf 'Expected: [ command ]\n' 1>&2; return 1; fi
+  local command="${1}"
+  docker exec -it ${CLN_CONTAINER} su -c 'lightning-cli '"${command}"'' ${USER}
+}
 ####################
 case ${1} in
-  up) boot ${2} ${3} ;;
+  up) boot ;;
   down) shutdown ;;
   clean) clean ;;
+  cli_wrapper) cli_wrapper "${2}" ;;
   nop) ;;
-  *) print_err 'Expected: [ up | down | clean ]' ;;
+  *) print_err 'Expected: [ up | down | cli_wrapper | clean ]' ;;
 esac
 
