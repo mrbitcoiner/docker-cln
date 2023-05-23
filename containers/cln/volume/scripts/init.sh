@@ -8,7 +8,7 @@ if echo ${TOR_PROXY} | grep '^enabled$' > dev/null; then
   /app/scripts/tor_setup.sh
 fi
 su -c '/app/scripts/bitcoin_cli_setup.sh' ${CONTAINER_USER}
-# config lightningd
+su -c '/app/scripts/cln_setup.sh' ${CONTAINER_USER}
+/app/scripts/shutdown.sh
 
-# temporary
-tail -f /dev/null
+su -c 'lightningd' ${CONTAINER_USER}

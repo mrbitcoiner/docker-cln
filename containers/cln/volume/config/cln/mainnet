@@ -1,0 +1,23 @@
+####################
+## NETWORK & INFO
+network=bitcoin
+alias=cln
+rgb=000000
+bind-addr=127.0.0.1:9735
+#announce-addr=hostname:port
+log-level=info
+#proxy=127.0.0.1:9050
+#always-use-proxy=true
+
+####################
+## PAYMENTS/ROUTING 
+wumbo
+min-capacity-sat=100000
+fee-base=1000
+fee-per-satoshi=100
+htlc-minimum-msat=1
+#htlc-maximum-msat=0
+max-concurrent-htlcs=30
+
+####################
+## OTHER

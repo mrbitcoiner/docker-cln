@@ -62,7 +62,8 @@ set_args(){
   case "${network}" in
     mainnet) env_set 'CLN_NETWORK' "${network}" ;;
     testnet) env_set 'CLN_NETWORK' "${network}" ;;
-    *) print_err 'Expected network: [ mainnet | testnet ]' ;;
+    regtest) env_set 'CLN_NETWORK' "${network}" ;;
+    *) print_err 'Expected network: [ mainnet | testnet | regtest ]' ;;
   esac
   case "${tor_proxy}" in
     enabled) env_set 'TOR_PROXY' "${tor_proxy}" ;;
@@ -119,19 +120,34 @@ boot(){
 }
 gracefully_shutdown(){
   for i in "${CONTAINERS[@]}"; do
-    printf 'Implement gracefully shutdown\n'
-    return 1
+    docker exec -it ${i} stop-container 
   done
 }
+still_running(){
+  local still_running=false
+  for i in "${CONTAINERS[@]}"; do
+    if docker ps -f name=${i} | grep '^.*   '${i}'$' > /dev/null; then
+      still_running=true
+      break
+    fi
+  done
+  ${still_running}
+}
 shutdown(){
-  if ! gracefully_shutdown; then
-    docker-compose down
-    print_err 'Force shutdown'
-  else
-    for i in "${CONTAINERS[@]}"; do
-      docker rm "${i}"
-    done
-  fi
+  gracefully_shutdown || true
+  local counter=0
+  local max=60
+  while [ ${counter} -le ${max} ]; do
+    if still_running; then
+      printf "\rWaiting gracefully shutdown ${counter}/${max}s"
+      counter=$((${counter} + 1))
+      sleep 1
+    else
+      break
+    fi
+  done
+  printf '\n'
+  docker-compose down
 }
 clean(){
   for i in "${CONTAINERS[@]}"; do
