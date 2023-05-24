@@ -56,6 +56,12 @@ build_images(){
     --build-arg $(get_env 'CLN_TRUSTEDCOIN_PLUGIN') \
     --build-arg $(get_env 'CLN_EXPOSE_RPC') \
     --build-arg $(get_env 'CLN_INT_RPC_PORT') \
+    --build-arg $(get_env 'CLN_BASE_FEE_MSAT') \
+    --build-arg $(get_env 'CLN_PPM_FEE') \
+    --build-arg $(get_env 'CLN_MIN_CH_CAPACITY_SAT') \
+    --build-arg $(get_env 'CLN_MAX_HTLC_INFLIGHT') \
+    --build-arg $(get_env 'CLN_MAX_HTLC_SIZE_MSAT') \
+    --build-arg $(get_env 'CLN_MIN_HTLC_SIZE_MSAT') \
     --build-arg $(get_env 'TOR_PROXY')
 }
 create_network(){
