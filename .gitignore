@@ -1,3 +1,5 @@
 containers/**/volume/data
 .env.old
 .env
+docker-compose.yml
+cln.sock

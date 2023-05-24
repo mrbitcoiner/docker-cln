@@ -4,8 +4,8 @@ services:
     build: ./containers/cln
     volumes:
       - ./containers/cln/volume:/app
-        #    ports:
-        #      - INT:EXT
+    ports:
+      - 8080:4321
     networks:
       - cln
 
