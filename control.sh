@@ -7,7 +7,9 @@ get_env(){
   scripts/get_env.sh '.env' "${1}" 
 }
 ####################
-readonly "$(get_env 'CLN_CONTAINER')"  
+readonly "$(get_env 'CLN_CONTAINER_NAME')"
+readonly CONTAINER_NAMES=("${CLN_CONTAINER_NAME}")
+readonly CLN_CONTAINER='cln'  
 readonly CONTAINERS=("${CLN_CONTAINER}")
 readonly "$(get_env 'NETWORK')"
 ####################
@@ -91,8 +93,8 @@ generate_docker_compose(){
   cat << EOF > docker-compose.yml
 services:
   cln:
-    container_name: ${CLN_CONTAINER} 
-    build: ./containers/cln
+    container_name: ${CLN_CONTAINER_NAME} 
+    build: ./containers/${CLN_CONTAINER}
     volumes:
       - ./containers/cln/volume:/app
     ports:
@@ -118,7 +120,7 @@ boot(){
   start_containers
 }
 shutdown(){
-  scripts/gracefully_stop.sh "${CONTAINERS}"
+  scripts/gracefully_stop.sh "${CONTAINER_NAMES}"
 }
 clean(){
   printf 'Are you sure? (N/y): '
