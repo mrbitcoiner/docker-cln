@@ -20,7 +20,6 @@ print_err(){
 }
 setup_directories(){
   for i in ${CONTAINERS[@]}; do
-    mkdir -p ./containers/${i}/volume/data/config
     mkdir -p ./containers/${i}/volume/scripts
     mkdir -p ./containers/${i}/volume/config
   done
