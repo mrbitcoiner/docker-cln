@@ -141,6 +141,15 @@ create_cln_socket(){
   if ! echo "${CLN_EXPOSE_RPC}" | grep '^enabled$' 1> /dev/null; then return 0; fi
   local $(get_env "CLN_EXT_RPC_PORT")
   socat UNIX-LISTEN:cln.sock,fork,reuseaddr TCP:127.0.0.1:${CLN_EXT_RPC_PORT} &
+  echo "$!" > sock.pid
+}
+stop_cln_socket(){
+  if ! [ -e sock.pid ]; then print_err "Socket does not exist"; fi
+  let pid="$(cat sock.pid)"
+  if kill -0 ${pid}; then
+    kill -2 ${pid}
+    rm sock.pid
+  fi
 }
 ####################
 case ${1} in
@@ -149,6 +158,7 @@ case ${1} in
   clean) clean ;;
   cli_wrapper) cli_wrapper "${2}" ;;
   sock_forward) create_cln_socket ;;
+  sock_stop) stop_cln_socket ;;
   nop) ;;
-  *) print_err 'Expected: [ up | down | sock_forward | cli_wrapper | clean ]' ;;
+  *) print_err 'Expected: [ up | down | sock_forward | sock_stop | cli_wrapper | clean ]' ;;
 esac
