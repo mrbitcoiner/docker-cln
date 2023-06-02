@@ -3,3 +3,4 @@ containers/**/volume/data
 .env
 docker-compose.yml
 cln.sock
+sock.pid
