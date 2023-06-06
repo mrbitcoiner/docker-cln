@@ -134,7 +134,7 @@ clean(){
 cli_wrapper(){
   if [ -z "${1}" ]; then printf 'Expected: [ command ]\n' 1>&2; return 1; fi
   local command="${1}"
-  docker exec -it ${CLN_CONTAINER} su -c 'lightning-cli '"${command}"'' ${USER}
+  docker exec -it ${CLN_CONTAINER_NAME} su -c 'lightning-cli '"${command}"'' ${USER}
 }
 create_cln_socket(){
   local $(get_env "CLN_EXPOSE_RPC")
