@@ -10,11 +10,9 @@ if [ -e /app/data/lightning ]; then exit 0; fi
 git clone ${CLN_REPO} /app/data/lightning
 cd /app/data/lightning
 git checkout ${COMMIT_VERSION}
-pip3 install --upgrade pip
-pip3 install mako
-pip3 install poetry
-export PATH=/home/${CONTAINER_USER}/.local/bin:${PATH}
-poetry install 
-source $(poetry env info --path)/bin/activate
-./configure
-make
+poetry run pip3 install --upgrade pip
+poetry run pip3 install mako
+poetry run pip3 install mrkd
+poetry install || true
+poetry run ./configure
+poetry run make
