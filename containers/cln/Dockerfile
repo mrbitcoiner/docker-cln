@@ -1,12 +1,13 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=nointeractive
 RUN apt update
 RUN apt upgrade -y
-RUN apt install -y \
+RUN apt install -y --no-install-recommends \
   autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev \
   python3 python3-pip net-tools zlib1g-dev libsodium-dev gettext \
-  libevent-dev tor wget socat
+  libevent-dev tor wget socat python3-poetry pkg-config libpq-dev python3-dev \ 
+  libffi-dev
 
 ARG CONTAINER_USER
 ARG CONTAINER_UID
