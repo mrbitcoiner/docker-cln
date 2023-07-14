@@ -22,7 +22,7 @@ HiddenServicePort ${HIDDEN_PORT} 127.0.0.1:${INT_PORT}
 EOF
 }
 start_tor(){
-  su -c 'tor &' ${CONTAINER_USER}
+  su -c 'tor > /dev/null &' ${CONTAINER_USER}
 }
 setup(){
   check_cln_network
