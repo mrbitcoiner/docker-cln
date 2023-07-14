@@ -9,7 +9,7 @@ check_arguments(){
 }
 try_shutdown(){
   for i in "${CONTAINERS[@]}"; do
-    docker exec -it ${i} stop-container 
+    docker exec ${i} stop-container 
   done
 }
 shutdown_order(){
