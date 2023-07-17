@@ -1,5 +1,5 @@
 # DOCKER-CLN
-## Build and run core lightning from source
+## Build and run Core Lightning from source
 
 ### Are you without a full node? Just enable trustedcoin in .env
 
@@ -11,7 +11,7 @@
 * Trustedcoin plugin
 * Sparko plugin
 * Cln Rest plugin
-* Expose core Lightning socket via TCP
+* Expose Core Lightning unix socket via TCP
 * Wrap TCP socket into a unix socket for development purposes
 * Integration with [docker-rtl](https://github.com/mrbitcoiner/docker-rtl)
 
