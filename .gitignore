@@ -1,8 +1,8 @@
 containers/**/volume/data
-# containers/**/volume/scripts/custom
+containers/**/volume/scripts/custom
 .env.old
 .env
 docker-compose.yml
-# scripts/custom
+scripts/custom
 cln.sock
 sock.pid

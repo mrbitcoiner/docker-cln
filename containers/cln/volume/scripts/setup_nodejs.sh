@@ -2,7 +2,7 @@
 ####################
 set -e
 ####################
-readonly NODEJS_DATA_PATH='/app/data/nodejs'
+readonly NODEJS_DATA_PATH="${HOME}/nodejs"
 readonly NODEJS_ARM64_DOWNLOAD='https://nodejs.org/dist/v18.16.1/node-v18.16.1-linux-arm64.tar.xz'
 readonly NODEJS_AMD64_DOWNLOAD='https://nodejs.org/dist/v18.16.1/node-v18.16.1-linux-x64.tar.xz'
 readonly NODEJS_ARM64_CHECKSUM='144eb4103e0193de8a41187817261d35970f1a13a11e779e16a4f1d9c99bcc82'
@@ -33,19 +33,7 @@ download_nodejs(){
     ;;
   esac
 }
-add_nodejs_to_path(){
-  if ! [ -e /app/data/PATH.env ]; then touch /app/data/PATH.env; fi
-  if ! grep  "^PATH=.*${NODEJS_DATA_PATH}/nodejs/bin.*$" /app/data/PATH.env > /dev/null 2>&1; then
-    source /app/data/PATH.env
-    cat << EOF > /app/data/PATH.env
-PATH=${NODEJS_DATA_PATH}/nodejs/bin:${PATH}
-EOF
-  fi
-}
 ####################
 mkdirs
 download_nodejs
-add_nodejs_to_path
-# clone_cln_rest
-# install_cln_rest
 

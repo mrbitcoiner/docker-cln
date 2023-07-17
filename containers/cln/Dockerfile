@@ -7,49 +7,21 @@ RUN apt install -y --no-install-recommends \
   autoconf automake build-essential git libtool libgmp-dev libsqlite3-dev \
   python3 python3-pip net-tools zlib1g-dev libsodium-dev gettext \
   libevent-dev tor wget socat python3-poetry pkg-config libpq-dev python3-dev \ 
-  libffi-dev
+  libffi-dev \
+  && echo '0.1.0' > /version
 
 ARG CONTAINER_USER
 ARG CONTAINER_UID
 ARG CONTAINER_GID
-ARG BITCOIN_RPC_HOSTNAME
-ARG BITCOIN_RPC_PORT
-ARG BITCOIN_RPC_USERNAME
-ARG BITCOIN_RPC_PASSWORD
-ARG CLN_EXPOSE_RPC
-ARG CLN_INT_RPC_PORT
-ARG CLN_NETWORK
-ARG CLN_ALIAS
-ARG CLN_BASE_FEE_MSAT
-ARG CLN_PPM_FEE
-ARG CLN_MIN_CH_CAPACITY_SAT
-ARG CLN_MAX_HTLC_INFLIGHT
-ARG CLN_MIN_HTLC_SIZE_MSAT
-ARG CLN_MAX_HTLC_SIZE_MSAT
-ARG CLN_TRUSTEDCOIN_PLUGIN
-ARG TOR_PROXY
 
 ENV CONTAINER_USER=${CONTAINER_USER}
-ENV PATH=/app/data/bitcoin:/app/data/lightning/lightningd:/app/data/lightning/cli:${PATH}
-ENV BITCOIN_RPC_HOSTNAME=${BITCOIN_RPC_HOSTNAME}
-ENV BITCOIN_RPC_PORT=${BITCOIN_RPC_PORT}
-ENV BITCOIN_RPC_USERNAME=${BITCOIN_RPC_USERNAME}
-ENV BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
-ENV CLN_EXPOSE_RPC=${CLN_EXPOSE_RPC}
-ENV CLN_INT_RPC_PORT=${CLN_INT_RPC_PORT}
-ENV CLN_NETWORK=${CLN_NETWORK}
-ENV CLN_ALIAS=${CLN_ALIAS}
-ENV CLN_BASE_FEE_MSAT=${CLN_BASE_FEE_MSAT}
-ENV CLN_PPM_FEE=${CLN_PPM_FEE}
-ENV CLN_MIN_CH_CAPACITY_SAT=${CLN_MIN_CH_CAPACITY_SAT}
-ENV CLN_MAX_HTLC_INFLIGHT=${CLN_MAX_HTLC_INFLIGHT}
-ENV CLN_MIN_HTLC_SIZE_MSAT=${CLN_MIN_HTLC_SIZE_MSAT}
-ENV CLN_MAX_HTLC_SIZE_MSAT=${CLN_MAX_HTLC_SIZE_MSAT}
-ENV CLN_TRUSTEDCOIN_PLUGIN=${CLN_TRUSTEDCOIN_PLUGIN}
-ENV TOR_PROXY=${TOR_PROXY}
+ENV CONTAINER_UID=${CONTAINER_UID}
+ENV CONTAINER_GID=${CONTAINER_GID}
+ENV PATH=/home/${CONTAINER_USER}/nodejs/nodejs/bin:/app/data/bitcoin:/app/data/lightning/lightningd:/app/data/lightning/cli:${PATH}
 
-ADD ./volume/scripts/user_setup.sh /scripts/user_setup.sh
-RUN /scripts/user_setup.sh ${CONTAINER_USER} ${CONTAINER_UID} ${CONTAINER_GID}
+COPY ./volume/scripts /scripts
+RUN /scripts/user_setup.sh ${CONTAINER_USER} ${CONTAINER_UID} ${CONTAINER_GID} \
+  && su -c '/scripts/setup_nodejs.sh' ${CONTAINER_USER}
 
-ADD ./volume/scripts/init.sh /scripts/init.sh
+
 ENTRYPOINT ["/scripts/init.sh"]

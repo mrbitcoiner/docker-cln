@@ -4,7 +4,9 @@ set -e
 ####################
 chmod +x scripts/*.sh
 ####################
-source .env
+if [ -e .env ]; then
+  source .env
+fi
 readonly CONTAINER_NAMES=("${CLN_CONTAINER_NAME}")
 readonly CLN_CONTAINER='cln'  
 readonly CONTAINERS=("${CLN_CONTAINER}")
@@ -15,6 +17,7 @@ print_err(){
   return 1
 }
 check_env(){
+  if ! [ -e .env ]; then printf 'You must copy the .env.example file to .env\n' 1>&2; return 1; fi
   if [ -z ${CLN_CONTAINER_NAME} ]; then printf 'Undefined env CLN_CONTAINER_NAME\n' 1>&2; return 1; fi
   if [ -z ${NETWORK} ]; then printf 'Undefined env NETWORK\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_CLI_PATH} ]; then printf 'Undefined env BITCOIN_CLI_PATH\n' 1>&2; return 1; fi
@@ -27,7 +30,7 @@ check_env(){
   if [ -z ${BITCOIN_RPC_PASSWORD} ]; then printf 'Undefined env BITCOIN_RPC_PASSWORD\n' 1>&2; return 1; fi
   if [ -z ${CLN_NETWORK} ]; then printf 'Undefined env CLN_NETWORK\n' 1>&2; return 1; fi
   if [ -z ${CLN_ALIAS} ]; then printf 'Undefined env CLN_ALIAS\n' 1>&2; return 1; fi
-  if [ -z ${CLN_TRUSTEDCOIN_PLUGIN} ]; then printf 'Undefined env CLN_TRUSTEDCOIN_PLUGIN\n' 1>&2; return 1; fi
+  if [ -z ${TRUSTEDCOIN} ]; then printf 'Undefined env CLN_TRUSTEDCOIN_PLUGIN\n' 1>&2; return 1; fi
   if [ -z ${CLN_BASE_FEE_MSAT} ]; then printf 'Undefined env CLN_BASE_FEE_MSAT\n' 1>&2; return 1; fi
   if [ -z ${CLN_PPM_FEE} ]; then printf 'Undefined env CLN_PPM_FEE\n' 1>&2; return 1; fi
   if [ -z ${CLN_MIN_CH_CAPACITY_SAT} ]; then printf 'Undefined env CLN_MIN_CH_CAPACITY_SAT\n' 1>&2; return 1; fi
@@ -35,6 +38,14 @@ check_env(){
   if [ -z ${CLN_MAX_HTLC_SIZE_MSAT} ]; then printf 'Undefined env CLN_MAX_HTLC_SIZE_MSAT\n' 1>&2; return 1; fi
   if [ -z ${CLN_MIN_HTLC_SIZE_MSAT} ]; then printf 'Undefined env CLN_MIN_HTLC_SIZE_MSAT\n' 1>&2; return 1; fi
   if [ -z ${TOR_PROXY} ]; then printf 'Undefined env TOR_PROXY\n' 1>&2; return 1; fi
+  if [ -z ${SPARKO} ]; then printf 'Undefined env SPARKO\n' 1>&2; return 1; fi
+  if [ -z ${SPARKO_EXT_PORT} ]; then printf 'Undefined env SPARKO_EXT_PORT\n' 1>&2; return 1; fi
+  if [ -z ${SPARKO_INT_PORT} ]; then printf 'Undefined env SPARKO_INT_PORT\n' 1>&2; return 1; fi
+  if [ -z ${SPARKO_USER} ]; then printf 'Undefined env SPARKO_USER\n' 1>&2; return 1; fi
+  if [ -z ${SPARKO_PASSWORD} ]; then printf 'Undefined env SPARKO_PASSWORD\n' 1>&2; return 1; fi
+  if [ -z ${CLN_REST} ]; then printf 'Undefined env CLN_REST\n' 1>&2; return 1; fi
+  if [ -z ${CLN_REST_INT_PORT} ]; then printf 'Undefined env CLN_REST_INT_PORT\n' 1>&2; return 1; fi
+  if [ -z ${CLN_REST_INT_DOCPORT} ]; then printf 'Undefined env CLN_REST_INT_DOCPORT\n' 1>&2; return 1; fi
 }
 setup_directories(){
   for i in ${CONTAINERS[@]}; do
@@ -55,28 +66,6 @@ set_script_permissions(){
     chmod +x ./scripts/custom/*.sh
   fi
 }
-build_images(){
-  docker-compose build \
-    --build-arg CONTAINER_USER=${USER} \
-    --build-arg CONTAINER_UID=$(id -u) \
-    --build-arg CONTAINER_GID=$(id -g) \
-    --build-arg BITCOIN_RPC_HOSTNAME=${BITCOIN_RPC_HOSTNAME} \
-    --build-arg BITCOIN_RPC_PORT=${BITCOIN_RPC_PORT} \
-    --build-arg BITCOIN_RPC_USERNAME=${BITCOIN_RPC_USERNAME} \
-    --build-arg BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD} \
-    --build-arg CLN_NETWORK=${CLN_NETWORK} \
-    --build-arg CLN_ALIAS=${CLN_ALIAS} \
-    --build-arg CLN_TRUSTEDCOIN_PLUGIN=${CLN_TRUSTEDCOIN_PLUGIN} \
-    --build-arg CLN_EXPOSE_RPC=${CLN_EXPOSE_RPC} \
-    --build-arg CLN_INT_RPC_PORT=${CLN_INT_RPC_PORT} \
-    --build-arg CLN_BASE_FEE_MSAT=${CLN_BASE_FEE_MSAT} \
-    --build-arg CLN_PPM_FEE=${CLN_PPM_FEE} \
-    --build-arg CLN_MIN_CH_CAPACITY_SAT=${CLN_MIN_CH_CAPACITY_SAT} \
-    --build-arg CLN_MAX_HTLC_INFLIGHT=${CLN_MAX_HTLC_INFLIGHT} \
-    --build-arg CLN_MAX_HTLC_SIZE_MSAT=${CLN_MAX_HTLC_SIZE_MSAT} \
-    --build-arg CLN_MIN_HTLC_SIZE_MSAT=${CLN_MIN_HTLC_SIZE_MSAT} \
-    --build-arg TOR_PROXY=${TOR_PROXY}
-}
 create_network(){
   if ! docker network ls | grep "${NETWORK}" > /dev/null; then
     docker network create -d bridge ${NETWORK}
@@ -89,6 +78,7 @@ start_containers(){
 }
 copy_bitcoin_cli(){
   local destination=./containers/${CLN_CONTAINER}/volume/data/bitcoin
+  if [ "${TRUSTEDCOIN}" == 'enabled' ]; then return 0; fi
   if ! [ -e ${destination}/bitcoin-cli ]; then
     mkdir -p ${destination}
     cp ${BITCOIN_CLI_PATH} ${destination}/
@@ -102,8 +92,36 @@ services:
     build: ./containers/cln
     volumes:
       - ./containers/cln/volume:/app
+    environment:
+      - BITCOIN_RPC_HOSTNAME=${BITCOIN_RPC_HOSTNAME} 
+      - BITCOIN_RPC_PORT=${BITCOIN_RPC_PORT} 
+      - BITCOIN_RPC_USERNAME=${BITCOIN_RPC_USERNAME} 
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD} 
+      - CLN_NETWORK=${CLN_NETWORK} 
+      - CLN_ALIAS=${CLN_ALIAS} 
+      - TRUSTEDCOIN=${TRUSTEDCOIN} 
+      - CLN_EXPOSE_RPC=${CLN_EXPOSE_RPC} 
+      - CLN_INT_RPC_PORT=${CLN_INT_RPC_PORT} 
+      - CLN_BASE_FEE_MSAT=${CLN_BASE_FEE_MSAT} 
+      - CLN_PPM_FEE=${CLN_PPM_FEE} 
+      - CLN_MIN_CH_CAPACITY_SAT=${CLN_MIN_CH_CAPACITY_SAT} 
+      - CLN_MAX_HTLC_INFLIGHT=${CLN_MAX_HTLC_INFLIGHT} 
+      - CLN_MAX_HTLC_SIZE_MSAT=${CLN_MAX_HTLC_SIZE_MSAT} 
+      - CLN_MIN_HTLC_SIZE_MSAT=${CLN_MIN_HTLC_SIZE_MSAT} 
+      - TOR_PROXY=${TOR_PROXY}
+      - SPARKO=${SPARKO}
+      - SPARKO_EXT_PORT=${SPARKO_EXT_PORT} 
+      - SPARKO_INT_PORT=${SPARKO_INT_PORT}
+      - SPARKO_USER=${SPARKO_USER}
+      - SPARKO_PASSWORD=${SPARKO_PASSWORD}
+      - CLN_REST=${CLN_REST}
+      - CLN_REST_EXT_PORT=${CLN_REST_EXT_PORT}
+      - CLN_REST_INT_PORT=${CLN_REST_INT_PORT}
+      - CLN_REST_EXT_DOCPORT=${CLN_REST_EXT_DOCPORT}
+      - CLN_REST_INT_DOCPORT=${CLN_REST_INT_DOCPORT}
     ports:
       - ${CLN_EXT_RPC_PORT}:${CLN_INT_RPC_PORT}
+      - ${SPARKO_EXT_PORT}:${SPARKO_INT_PORT}
     networks:
       - cln
 
@@ -112,14 +130,14 @@ networks:
     name: ${NETWORK} 
     external: true
 EOF
+
 }
 run_custom(){
   if [ -e ./scripts/custom/init.sh ]; then
     ./scripts/custom/init.sh
   fi
 }
-####################
-boot(){
+up_build_common(){
   check_env
   create_network
   generate_docker_compose
@@ -127,18 +145,26 @@ boot(){
   set_script_permissions
   copy_bitcoin_cli
   run_custom
-  build_images
+}
+####################
+build(){
+  up_build_common
+  docker-compose build \
+    --build-arg CONTAINER_USER=${USER} \
+    --build-arg CONTAINER_UID=$(id -u) \
+    --build-arg CONTAINER_GID=$(id -g)
+}
+up(){
+  up_build_common
   start_containers
 }
 shutdown(){
   scripts/gracefully_stop.sh "${CONTAINER_NAMES}"
 }
 clean(){
-  printf 'Are you sure? (N/y): '
+  printf 'Are you sure? (Y/n): '
   read input
-  if ! echo ${input} | grep '^y$'; then
-    printf 'Abort!\n' 1>&2; return 1
-  fi
+  if [ "${input}" != 'Y' ]; then printf 'Abort!\n' 1>&2; return 1; fi
   for i in "${CONTAINERS[@]}"; do
     rm -rfv ./containers/${i}/volume/data
   done
@@ -163,7 +189,8 @@ stop_cln_socket(){
 }
 ####################
 case ${1} in
-  up) boot ;;
+  up) up ;;
+  build) build ;;
   down) shutdown ;;
   clean) clean ;;
   cli_wrapper) cli_wrapper "${2}" ;;

@@ -7,6 +7,9 @@ readonly SERVICE_NAME=lightning
 readonly HIDDEN_PORT=9735
 readonly INT_PORT=9735
 ###################
+check_tor_enabled(){
+  if [ "${TOR_PROXY}" != 'enabled' ]; then exit 0; fi
+}
 check_cln_network(){
   case ${CLN_NETWORK} in
     mainnet) ;;
@@ -23,8 +26,13 @@ EOF
 }
 start_tor(){
   su -c 'tor > /dev/null &' ${CONTAINER_USER}
+  while ! [ -e "${TOR_DIR}/${CLN_NETWORK}/hostname" ]; do
+    printf 'Blocking until tor setup finishes\n'
+    sleep 1
+  done
 }
 setup(){
+  check_tor_enabled
   check_cln_network
   su -c "mkdir -p ${TOR_DIR}" ${CONTAINER_USER}
   set_tor_config
