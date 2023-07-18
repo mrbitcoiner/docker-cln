@@ -2,11 +2,14 @@
 ####################
 set -e
 ####################
-chmod +x scripts/*.sh
-####################
-if [ -e .env ]; then
-  source .env
+readonly LOCAL_DIR="$(dirname ${0})"
+if [ -e "${LOCAL_DIR}/scripts/gracefully_stop.sh" ]; then
+  chmod +x ${LOCAL_DIR}/scripts/*.sh
 fi
+if [ -e "${LOCAL_DIR}/.env" ]; then
+  source ${LOCAL_DIR}/.env
+fi
+####################
 readonly CONTAINER_NAMES=("${CLN_CONTAINER_NAME}")
 readonly CLN_CONTAINER='cln'  
 readonly CONTAINERS=("${CLN_CONTAINER}")
@@ -17,7 +20,7 @@ print_err(){
   return 1
 }
 check_env(){
-  if ! [ -e .env ]; then printf 'You must copy the .env.example file to .env\n' 1>&2; return 1; fi
+  if ! [ -e ${LOCAL_DIR}/.env ]; then printf 'You must copy the .env.example file to .env\n' 1>&2; return 1; fi
   if [ -z ${CLN_CONTAINER_NAME} ]; then printf 'Undefined env CLN_CONTAINER_NAME\n' 1>&2; return 1; fi
   if [ -z ${NETWORK} ]; then printf 'Undefined env NETWORK\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_CLI_PATH} ]; then printf 'Undefined env BITCOIN_CLI_PATH\n' 1>&2; return 1; fi
@@ -46,21 +49,21 @@ check_env(){
 }
 setup_directories(){
   for i in ${CONTAINERS[@]}; do
-    mkdir -p ./containers/${i}/volume/scripts
-    mkdir -p ./containers/${i}/volume/config
+    mkdir -p ${LOCAL_DIR}/containers/${i}/volume/scripts
+    mkdir -p ${LOCAL_DIR}/containers/${i}/volume/config
   done
 }
 set_script_permissions(){
   for i in ${CONTAINERS[@]}; do
-    if [ -e ./containers/${i}/volume/scripts/init.sh ]; then
-      chmod +x ./containers/${i}/volume/scripts/*.sh
+    if [ -e ${LOCAL_DIR}/containers/${i}/volume/scripts/init.sh ]; then
+      chmod +x ${LOCAL_DIR}/containers/${i}/volume/scripts/*.sh
     fi
-    if [ -e ./containers/${i}/volume/scripts/custom/init.sh ]; then
-      chmod +x ./containers/${i}/volume/scripts/custom/*.sh
+    if [ -e ${LOCAL_DIR}/containers/${i}/volume/scripts/custom/init.sh ]; then
+      chmod +x ${LOCAL_DIR}/containers/${i}/volume/scripts/custom/*.sh
     fi
   done
-  if [ -e ./scripts/custom/init.sh ]; then
-    chmod +x ./scripts/custom/*.sh
+  if [ -e ${LOCAL_DIR}/scripts/custom/init.sh ]; then
+    chmod +x ${LOCAL_DIR}/scripts/custom/*.sh
   fi
 }
 create_network(){
@@ -69,20 +72,20 @@ create_network(){
   fi
 }
 start_containers(){
+  cd ${LOCAL_DIR}
   docker-compose up \
     --remove-orphans \
     &
+  cd - 1>/dev/null
 }
 copy_bitcoin_cli(){
-  local destination=./containers/${CLN_CONTAINER}/volume/data/bitcoin
-  if [ "${TRUSTEDCOIN}" == 'enabled' ]; then return 0; fi
-  if ! [ -e ${destination}/bitcoin-cli ]; then
-    mkdir -p ${destination}
-    cp ${BITCOIN_CLI_PATH} ${destination}/
-  fi
+  local destination="${LOCAL_DIR}/containers/${CLN_CONTAINER}/volume/data/bitcoin"
+  if [ -e "${destination}/bitcoin-cli" ] || [ "${TRUSTEDCOIN}" == 'enabled' ]; then return 0; fi
+  mkdir -p ${destination}
+  cp ${BITCOIN_CLI_PATH} ${destination}/
 }
 generate_docker_compose(){
-  cat << EOF > docker-compose.yml
+  cat << EOF > ${LOCAL_DIR}/docker-compose.yml
 services:
   cln:
     container_name: ${CLN_CONTAINER_NAME} 
@@ -129,8 +132,8 @@ EOF
 
 }
 run_custom(){
-  if [ -e ./scripts/custom/init.sh ]; then
-    ./scripts/custom/init.sh
+  if [ -e ${LOCAL_DIR}/scripts/custom/init.sh ]; then
+    ${LOCAL_DIR}/scripts/custom/init.sh
   fi
 }
 up_build_common(){
@@ -145,24 +148,28 @@ up_build_common(){
 ####################
 build(){
   up_build_common
+  cd ${LOCAL_DIR}
   docker-compose build \
     --build-arg CONTAINER_USER=${USER} \
     --build-arg CONTAINER_UID=$(id -u) \
     --build-arg CONTAINER_GID=$(id -g)
+  cd - 1>/dev/null
 }
 up(){
   up_build_common
   start_containers
 }
 shutdown(){
+  cd ${LOCAL_DIR}
   scripts/gracefully_stop.sh "${CONTAINER_NAMES}"
+  cd - 1>/dev/null
 }
 clean(){
   printf 'Are you sure? (Y/n): '
   read input
   if [ "${input}" != 'Y' ]; then printf 'Abort!\n' 1>&2; return 1; fi
   for i in "${CONTAINERS[@]}"; do
-    rm -rfv ./containers/${i}/volume/data
+    rm -rfv ${LOCAL_DIR}/containers/${i}/volume/data
   done
 }
 lightning-cli(){
@@ -181,7 +188,7 @@ lightning-cli(){
     regtest) network=regtest ;;
     *) printf 'Invalid CLN_NETWORK\n' 1>&2; return 1 ;;
   esac
-  echo ${command} | socat - UNIX-CONNECT:./containers/cln/volume/data/.lightning/${network}/lightning-rpc
+  echo ${command} | socat - UNIX-CONNECT:${LOCAL_DIR}/containers/cln/volume/data/.lightning/${network}/lightning-rpc
 }
 ####################
 case ${1} in

@@ -11,8 +11,6 @@
 * Trustedcoin plugin
 * Sparko plugin
 * Cln Rest plugin
-* Expose Core Lightning unix socket via TCP
-* Wrap TCP socket into a unix socket for development purposes
 * Integration with [docker-rtl](https://github.com/mrbitcoiner/docker-rtl)
 
 ### Getting Started
@@ -45,7 +43,7 @@ git clone https://github.com/mrbitcoiner/docker-cln && cd docker-cln
 ./control.sh down
 ```
 
-### Updating
+### Upgrading
 
 * Stop the container, rebuild the image and start the container
 ```bash
