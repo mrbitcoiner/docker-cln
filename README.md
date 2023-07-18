@@ -37,10 +37,17 @@ git clone https://github.com/mrbitcoiner/docker-cln && cd docker-cln
 
 * Run lightning-cli commands 
 ```bash
-./control.sh cli_wrapper 'getinfo'
+./control.sh lightning-cli 'method' '{"param1": "value1", "param2": "value2"}'
 ```
 
 * Stop with
 ```bash
 ./control.sh down
+```
+
+### Updating
+
+* Stop the container, rebuild the image and start the container
+```bash
+./control.sh down || true && ./control.sh build && ./control.sh up
 ```

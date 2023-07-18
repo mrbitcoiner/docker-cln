@@ -21,9 +21,6 @@ check_env(){
   if [ -z ${CLN_CONTAINER_NAME} ]; then printf 'Undefined env CLN_CONTAINER_NAME\n' 1>&2; return 1; fi
   if [ -z ${NETWORK} ]; then printf 'Undefined env NETWORK\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_CLI_PATH} ]; then printf 'Undefined env BITCOIN_CLI_PATH\n' 1>&2; return 1; fi
-  if [ -z ${CLN_EXPOSE_RPC} ]; then printf 'Undefined env CLN_EXPOSE_RPC\n' 1>&2; return 1; fi
-  if [ -z ${CLN_INT_RPC_PORT} ]; then printf 'Undefined env CLN_INT_RPC_PORT\n' 1>&2; return 1; fi
-  if [ -z ${CLN_EXT_RPC_PORT} ]; then printf 'Undefined env CLN_EXT_RPC_PORT\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_RPC_HOSTNAME} ]; then printf 'Undefined env BITCOIN_RPC_HOSTNAME\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_RPC_PORT} ]; then printf 'Undefined env BITCOIN_RPC_PORT\n' 1>&2; return 1; fi
   if [ -z ${BITCOIN_RPC_USERNAME} ]; then printf 'Undefined env BITCOIN_RPC_USERNAME\n' 1>&2; return 1; fi
@@ -120,7 +117,6 @@ services:
       - CLN_REST_EXT_DOCPORT=${CLN_REST_EXT_DOCPORT}
       - CLN_REST_INT_DOCPORT=${CLN_REST_INT_DOCPORT}
     ports:
-      - ${CLN_EXT_RPC_PORT}:${CLN_INT_RPC_PORT}
       - ${SPARKO_EXT_PORT}:${SPARKO_INT_PORT}
     networks:
       - cln
@@ -169,23 +165,23 @@ clean(){
     rm -rfv ./containers/${i}/volume/data
   done
 }
-cli_wrapper(){
-  if [ -z "${1}" ]; then printf 'Expected: [ command ]\n' 1>&2; return 1; fi
-  local command="${1}"
-  docker exec -it ${CLN_CONTAINER_NAME} su -c 'lightning-cli '"${command}"'' ${USER}
-}
-create_cln_socket(){
-  if ! echo "${CLN_EXPOSE_RPC}" | grep '^enabled$' 1> /dev/null; then return 0; fi
-  socat UNIX-LISTEN:cln.sock,fork,reuseaddr TCP:127.0.0.1:${CLN_EXT_RPC_PORT} &
-  echo "$!" > sock.pid
-}
-stop_cln_socket(){
-  if ! [ -e sock.pid ]; then printf 'Socket does not exist\' 1>&2; return 1; fi
-  let pid="$(cat sock.pid)"
-  if kill -0 ${pid}; then
-    kill -2 ${pid}
-    rm sock.pid
+lightning-cli(){
+  if [ -z "${1}" ] || [ -z "${2}" ]; then
+    printf 'Expected: [ method ] [ params ]\n' 1>&2
+    printf 'Examples:\n'
+    printf "\t ./control.sh lightning-cli \'getinfo\' \'{}\'\n"
+    printf "\t ./control.sh lightning-cli \'listpeers\' \'{\"id\": \"peer_id\"}\'\n"
+    return 1
   fi
+  local command="{\"jsonrpc\": 2.0, \"id\": 1, \"method\": \"${1}\", \"params\": ${2}}"
+  local network
+  case ${CLN_NETWORK} in
+    mainnet) network=bitcoin ;;
+    testnet) network=testnet ;;
+    regtest) network=regtest ;;
+    *) printf 'Invalid CLN_NETWORK\n' 1>&2; return 1 ;;
+  esac
+  echo ${command} | socat - UNIX-CONNECT:./containers/cln/volume/data/.lightning/${network}/lightning-rpc
 }
 ####################
 case ${1} in
@@ -193,9 +189,7 @@ case ${1} in
   build) build ;;
   down) shutdown ;;
   clean) clean ;;
-  cli_wrapper) cli_wrapper "${2}" ;;
-  sock_forward) create_cln_socket ;;
-  sock_stop) stop_cln_socket ;;
+  lightning-cli) lightning-cli "${2}" "${3}" ;;
   nop) ;;
-  *) printf 'Expected: [ up | down | sock_forward | sock_stop | cli_wrapper | clean ]\n' 1>&2; return 1 ;;
+  *) printf 'Expected: [ build | up | down | lightning-cli | clean ]\n' 1>&2; return 1 ;;
 esac
