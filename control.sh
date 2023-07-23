@@ -174,7 +174,7 @@ clean(){
 }
 lightning-cli(){
   if [ -z "${1}" ]; then printf 'Expected: <command>\n' 1>&2; return 1; fi
-  docker exec -it ${CLN_CONTAINER_NAME} su -c "lightning-cli ${1}" ${USER}
+  docker exec ${CLN_CONTAINER_NAME} su -c "lightning-cli ${1}" ${USER}
 }
 ####################
 case ${1} in
