@@ -173,22 +173,8 @@ clean(){
   done
 }
 lightning-cli(){
-  if [ -z "${1}" ] || [ -z "${2}" ]; then
-    printf 'Expected: [ method ] [ params ]\n' 1>&2
-    printf 'Examples:\n'
-    printf "\t ./control.sh lightning-cli \'getinfo\' \'{}\'\n"
-    printf "\t ./control.sh lightning-cli \'listpeers\' \'{\"id\": \"peer_id\"}\'\n"
-    return 1
-  fi
-  local command="{\"jsonrpc\": 2.0, \"id\": 1, \"method\": \"${1}\", \"params\": ${2}}"
-  local network
-  case ${CLN_NETWORK} in
-    mainnet) network=bitcoin ;;
-    testnet) network=testnet ;;
-    regtest) network=regtest ;;
-    *) printf 'Invalid CLN_NETWORK\n' 1>&2; return 1 ;;
-  esac
-  echo ${command} | socat - UNIX-CONNECT:${LOCAL_DIR}/containers/cln/volume/data/.lightning/${network}/lightning-rpc
+  if [ -z "${1}" ]; then printf 'Expected: <command>\n' 1>&2; return 1; fi
+  docker exec -it ${CLN_CONTAINER_NAME} su -c "lightning-cli ${1}" ${USER}
 }
 ####################
 case ${1} in
